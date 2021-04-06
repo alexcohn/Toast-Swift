@@ -751,6 +751,7 @@ public enum ToastPosition {
     case top
     case center
     case bottom
+    case avoidKeyboard
     
     fileprivate func centerPoint(forToast toast: UIView, inSuperview superview: UIView) -> CGPoint {
         let topPadding: CGFloat = ToastManager.shared.style.verticalPadding + superview.csSafeAreaInsets.top
@@ -763,6 +764,12 @@ public enum ToastPosition {
             return CGPoint(x: superview.bounds.size.width / 2.0, y: superview.bounds.size.height / 2.0)
         case .bottom:
             return CGPoint(x: superview.bounds.size.width / 2.0, y: (superview.bounds.size.height - (toast.frame.size.height / 2.0)) - bottomPadding)
+        case .avoidKeyboard:
+            if UIApplication.shared.isKeyboardPresented {
+                return CGPoint(x: superview.bounds.size.width / 2, y: superview.bounds.size.height - UIApplication.shared.windows.last!.subviews.last!.subviews.last!.frame.height - toast.frame.size.height / 2.0 - bottomPadding)
+            } else {
+                return ToastPosition.bottom.centerPoint(forToast: toast, inSuperview: superview)
+            }
         }
     }
 }
@@ -779,4 +786,17 @@ private extension UIView {
         }
     }
     
+}
+
+// copied with gratitude from https://stackoverflow.com/a/52417737/192373
+private extension UIApplication {
+    /// Checks if view hierarchy of application contains `UIRemoteKeyboardWindow` if it does, keyboard is presented
+    var isKeyboardPresented: Bool {
+        if let keyboardWindowClass = NSClassFromString("UIRemoteKeyboardWindow"),
+            self.windows.contains(where: { $0.isKind(of: keyboardWindowClass) }) {
+            return true
+        } else {
+            return false
+        }
+    }
 }
